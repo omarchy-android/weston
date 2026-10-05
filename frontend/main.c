@@ -41,7 +41,9 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#ifndef __ANDROID__
 #include <libinput.h>
+#endif
 #include <libevdev/libevdev.h>
 #include <linux/input.h>
 #include <sys/time.h>
@@ -1096,6 +1098,7 @@ load_modules(struct weston_compositor *ec, const char *modules,
 	return 0;
 }
 
+#ifndef __ANDROID__
 static int
 save_touch_device_calibration(struct weston_compositor *compositor,
 			      struct weston_touch_device *device,
@@ -1153,6 +1156,7 @@ out:
 
 	return ret;
 }
+#endif
 
 static const struct weston_enum_map require_outputs_modes [] = {
 	{ "all-found",	REQUIRE_OUTPUTS_ALL_FOUND },
@@ -1238,6 +1242,7 @@ weston_compositor_init_config(struct weston_compositor *ec,
 	weston_config_section_get_bool(s, "renderer-restricted-context",
 				       &ec->renderer_restricted_context, false);
 
+#ifndef __ANDROID__
 	/* weston.ini [libinput] */
 	s = weston_config_get_section(config, "libinput", NULL, NULL);
 	weston_config_section_get_bool(s, "touchscreen_calibrator", &cal, 0);
@@ -1246,6 +1251,7 @@ weston_compositor_init_config(struct weston_compositor *ec,
 						save_touch_device_calibration);
 	weston_config_section_get_bool(s, "disable-input", &disable_input, false);
 	compositor->compositor->disable_input = disable_input;
+#endif
 
 	return 0;
 }
@@ -2830,6 +2836,7 @@ simple_heads_changed(struct wl_listener *listener, void *arg)
 	}
 }
 
+#ifndef __ANDROID__
 static void
 configure_input_device_accel(struct weston_config_section *s,
 		struct libinput_device *device)
@@ -3033,7 +3040,7 @@ configure_input_device(struct weston_compositor *compositor,
 
 	configure_input_device_scroll(s, device);
 }
-
+#endif
 static int
 drm_backend_output_configure(struct weston_output *output,
 			     struct weston_config_section *section)
@@ -3812,6 +3819,7 @@ static int
 load_drm_backend(struct weston_compositor *c, int *argc, char **argv,
 		 struct weston_config *wc, enum weston_renderer_type renderer)
 {
+#ifndef __ANDROID__
 	struct weston_drm_backend_config config = {{ 0, }};
 	struct weston_config_section *section;
 	struct wet_compositor *wet = to_wet_compositor(c);

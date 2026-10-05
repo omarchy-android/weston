@@ -1231,6 +1231,10 @@ background_create(struct desktop *desktop, struct output *output)
 	struct weston_config_section *s;
 	char *type;
 
+#ifdef __ANDROID__
+	const char *program_invocation_short_name = getprogname();
+#endif
+
 	background = xzalloc(sizeof *background);
 	background->owner = output;
 	background->base.configure = background_configure;

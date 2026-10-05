@@ -180,6 +180,7 @@ struct weston_renderer {
 	 */
 	void (*destroy_renderbuffer)(weston_renderbuffer_t renderbuffer);
 
+#ifndef __ANDROID__
 	/** Allocate a DMABUF that can be imported as renderbuffer
 	 *
 	 * \param renderer The renderer that allocated the DMABUF
@@ -199,6 +200,7 @@ struct weston_renderer {
 					unsigned int width, unsigned int height,
 					uint32_t format,
 					const uint64_t *modifiers, unsigned int count);
+#endif
 
 	/** Checks if renderer is able to produce fb's with straight alpha
 	 * encoding (i.e. not pre-multiplied by alpha).

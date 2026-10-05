@@ -40,6 +40,7 @@
 #include <linux/input.h>
 
 #include <xcb/xcb.h>
+#include <xcb/randr.h>
 #include <xcb/shm.h>
 #ifdef HAVE_XCB_XKB
 #include <xcb/xkb.h>
@@ -199,6 +200,73 @@ x11_compositor_get_default_screen(struct x11_backend *b)
 			return iter.data;
 
 	return xcb_setup_roots_iterator(xcb_get_setup(b->conn)).data;
+}
+
+/* The stock X11 backend advertises a fixed 60 Hz mode even when its parent X
+ * server runs faster. Termux:X11 publishes Android's current display cadence
+ * through XRandR, so use the active CRTC's real timing for nested frame pacing.
+ * Fall back to Weston's historical 60 Hz value if RandR is unavailable. */
+static int32_t
+x11_compositor_get_refresh_mhz(struct x11_backend *b)
+{
+	xcb_randr_get_screen_resources_current_reply_t *resources;
+	xcb_randr_crtc_t *crtcs;
+	xcb_randr_mode_info_t *modes;
+	int crtc_count, mode_count, i, j;
+	int32_t refresh = 60000;
+	const char *override;
+	char *override_end;
+	long override_value;
+
+	override = getenv("WESTON_X11_REFRESH_MHZ");
+	if (override) {
+		errno = 0;
+		override_value = strtol(override, &override_end, 10);
+		if (!errno && override_end != override && *override_end == '\0' &&
+		    override_value >= 30000 && override_value <= 240000)
+			return (int32_t)override_value;
+	}
+
+	resources = xcb_randr_get_screen_resources_current_reply(
+		b->conn,
+		xcb_randr_get_screen_resources_current(b->conn, b->screen->root),
+		NULL);
+	if (!resources)
+		return refresh;
+
+	crtcs = xcb_randr_get_screen_resources_current_crtcs(resources);
+	crtc_count = xcb_randr_get_screen_resources_current_crtcs_length(resources);
+	modes = xcb_randr_get_screen_resources_current_modes(resources);
+	mode_count = xcb_randr_get_screen_resources_current_modes_length(resources);
+
+	for (i = 0; i < crtc_count; ++i) {
+		xcb_randr_get_crtc_info_reply_t *crtc;
+
+		crtc = xcb_randr_get_crtc_info_reply(
+			b->conn,
+			xcb_randr_get_crtc_info(b->conn, crtcs[i], resources->config_timestamp),
+			NULL);
+		if (!crtc)
+			continue;
+
+		for (j = 0; j < mode_count; ++j) {
+			uint64_t denominator;
+
+			if (modes[j].id != crtc->mode)
+				continue;
+			denominator = (uint64_t)modes[j].htotal * modes[j].vtotal;
+			if (denominator)
+				refresh = (int32_t)(((uint64_t)modes[j].dot_clock * 1000 + denominator / 2) / denominator);
+			break;
+		}
+
+		free(crtc);
+		if (refresh != 60000)
+			break;
+	}
+
+	free(resources);
+	return refresh;
 }
 
 static struct xkb_keymap *
@@ -1247,7 +1315,9 @@ x11_output_set_size(struct weston_output *base, int width, int height)
 
 	output->mode.width = output_width;
 	output->mode.height = output_height;
-	output->mode.refresh = 60000;
+	output->mode.refresh = x11_compositor_get_refresh_mhz(b);
+	weston_log("x11 output refresh selected: %.3f Hz\n",
+		   output->mode.refresh / 1000.0);
 	output->native = output->mode;
 	output->scale = output->base.current_scale;
 	wl_list_insert(&output->base.mode_list, &output->mode.link);

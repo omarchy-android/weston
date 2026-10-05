@@ -42,6 +42,10 @@ abort_oom_if_null(void *p)
 	static const char oommsg[] = ": out of memory\n";
 	size_t written __attribute__((unused));
 
+#ifdef __ANDROID__
+	const char *program_invocation_short_name = getprogname();
+#endif
+
 	if (p)
 		return p;
 

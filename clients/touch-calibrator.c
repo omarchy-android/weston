@@ -870,6 +870,10 @@ pr_err(const char *fmt, ...)
 {
 	va_list argp;
 
+#ifdef __ANDROID__
+	const char *program_invocation_short_name = getprogname();
+#endif
+
 	va_start(argp, fmt);
 	fprintf(stderr, "%s error: ", program_invocation_short_name);
 	vfprintf(stderr, fmt, argp);
@@ -879,6 +883,9 @@ pr_err(const char *fmt, ...)
 static void
 help(void)
 {
+#ifdef __ANDROID__
+	const char *program_invocation_short_name = getprogname();
+#endif
 	fprintf(stderr, "Compute a touchscreen calibration matrix for "
 		"a Wayland compositor by\n"
 		"having the user touch points on the screen.\n\n");

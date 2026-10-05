@@ -12,7 +12,6 @@ srcs_weston = [
 deps_weston = [
 	dep_libshared,
 	dep_libweston_public,
-	dep_libinput,
 	dep_libevdev,
 	dep_libdl,
 	dep_threads,

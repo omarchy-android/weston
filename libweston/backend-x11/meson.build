@@ -32,6 +32,12 @@ foreach name : [ 'xcb-shm', 'x11', 'x11-xcb' ]
 	deps_x11 += d
 endforeach
 
+dep_xcb_randr = dependency('xcb-randr', required: false)
+if not dep_xcb_randr.found()
+	error('x11-backend requires xcb-randr which was not found. Or, you can use \'-Dbackend-x11=false\'.')
+endif
+deps_x11 += dep_xcb_randr
+
 dep_xcb_xkb = dependency('xcb-xkb', version: '>= 1.9', required: false)
 if dep_xcb_xkb.found()
 	deps_x11 += dep_xcb_xkb

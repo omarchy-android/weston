@@ -78,9 +78,9 @@ weston_xserver_shutdown(struct weston_xserver *wxs)
 {
 	char path[256];
 
-	snprintf(path, sizeof path, "/tmp/.X%d-lock", wxs->display);
+	snprintf(path, sizeof path, "@TERMUX_PREFIX@/tmp/.X%d-lock", wxs->display);
 	unlink(path);
-	snprintf(path, sizeof path, "/tmp/.X11-unix/X%d", wxs->display);
+	snprintf(path, sizeof path, "@TERMUX_PREFIX@/tmp/.X11-unix/X%d", wxs->display);
 	unlink(path);
 	if (wxs->client) {
 		wl_client_destroy(wxs->client);
@@ -113,7 +113,7 @@ bind_to_abstract_socket(int display)
 
 	addr.sun_family = AF_LOCAL;
 	name_size = snprintf(addr.sun_path, sizeof addr.sun_path,
-			     "%c/tmp/.X11-unix/X%d", 0, display);
+			     "%c@TERMUX_PREFIX@/tmp/.X11-unix/X%d", 0, display);
 	size = offsetof(struct sockaddr_un, sun_path) + name_size;
 	if (bind(fd, (struct sockaddr *) &addr, size) < 0) {
 		weston_log("failed to bind to @%s: %s\n", addr.sun_path + 1,
@@ -143,7 +143,7 @@ bind_to_unix_socket(int display)
 
 	addr.sun_family = AF_LOCAL;
 	name_size = snprintf(addr.sun_path, sizeof addr.sun_path,
-			     "/tmp/.X11-unix/X%d", display) + 1;
+			     "@TERMUX_PREFIX@/tmp/.X11-unix/X%d", display) + 1;
 	size = offsetof(struct sockaddr_un, sun_path) + name_size;
 	unlink(addr.sun_path);
 	if (bind(fd, (struct sockaddr *) &addr, size) < 0) {
@@ -171,7 +171,7 @@ create_lockfile(int display, char *lockfile, size_t lsize)
 	int fd, size;
 	pid_t other;
 
-	snprintf(lockfile, lsize, "/tmp/.X%d-lock", display);
+	snprintf(lockfile, lsize, "@TERMUX_PREFIX@/tmp/.X%d-lock", display);
 	fd = open(lockfile, O_WRONLY | O_CLOEXEC | O_CREAT | O_EXCL, 0444);
 	if (fd < 0 && errno == EEXIST) {
 		fd = open(lockfile, O_CLOEXEC | O_RDONLY);

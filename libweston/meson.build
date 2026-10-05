@@ -246,6 +246,7 @@ dep_libinput_backend = declare_dependency(
 	link_with: lib_libinput_backend,
 	include_directories: include_directories('.')
 )
+endif
 
 dep_vertex_clipping = declare_dependency(
 	sources: 'vertex-clipping.c',
